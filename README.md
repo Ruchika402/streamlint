@@ -9,23 +9,6 @@ Every browser on the same session link sees the same live stream.
 
 ---
 
-## Event contract
-
-Every WebSocket message is JSON with a `type`, `review_id`, and `seq` (sequence number).
-
-| type | payload | sent when |
-|---|---|---|
-| `status` | `state`: `queued`, `running`, `cached`, `done`, `failed` | state changes |
-| `redaction` | `count` — number of secrets masked | before the review |
-| `static_findings` | list of Ruff findings (`line`, `code`, `message`) | after Ruff runs |
-| `issue` | `line`, `severity`, `category`, `message`, `suggestion` | per parsed Gemini line |
-| `summary` | `text`, counts per severity | end of review |
-| `error` | `code`, friendly `message` | any failure |
-| `presence` | `viewers` — count | someone joins or leaves |
-
-Backend and frontend both obey this contract.
-
----
 
 ## Stack
 
