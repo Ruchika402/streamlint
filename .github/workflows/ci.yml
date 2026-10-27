@@ -57,6 +57,7 @@ jobs:
         DEBUG: False
         DATABASE_URL: postgres://streamlint_user:8697@localhost:5432/streamlint_db
         REDIS_URL: redis://localhost:6379/0
+        CORS_ORIGINS: http://localhost:5173 
       run: |
         cd backend
         python manage.py check

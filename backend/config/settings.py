@@ -143,4 +143,5 @@ CHANNEL_LAYERS = {
     },
 }
 
-CORS_ALLOWED_ORIGINS = os.getenv("CORS_ORIGINS", "").split(",")
+cors_origins = os.getenv("CORS_ORIGINS", "")
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins.split(",") if origin.strip()]
