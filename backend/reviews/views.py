@@ -5,7 +5,7 @@ from rest_framework.permissions import AllowAny
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
-from .models import ReviewSession, Review
+from .models import ReviewSession
 from .serializers import ReviewSessionSerializer, ReviewSerializer
 
 class HealthCheckView(APIView):
