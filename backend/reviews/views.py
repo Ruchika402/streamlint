@@ -4,7 +4,9 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-
+from django.http import HttpResponse
+import os
+from django.conf import settings
 from .models import ReviewSession
 from .serializers import ReviewSessionSerializer, ReviewSerializer
 
@@ -63,9 +65,7 @@ class ReviewCreateView(APIView):
             return Response(ReviewSerializer(review).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-from django.http import HttpResponse
-import os
-from django.conf import settings
+
 
 def ws_test_page(request):
     file_path = os.path.join(settings.BASE_DIR, 'ws_test.html')

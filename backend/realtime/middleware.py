@@ -1,4 +1,3 @@
-from urllib.parse import urlparse
 from channels.security.websocket import OriginValidator
 from django.conf import settings
 
