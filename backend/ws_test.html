@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head><title>WS Test</title></head>
+<body>
+    <h2>WebSocket Test</h2>
+    <input type="text" id="token" placeholder="Paste session token here" style="width: 300px;">
+    <button onclick="connect()">Connect</button>
+    <hr>
+    <pre id="output"></pre>
+
+    <script>
+        let ws;
+        function connect() {
+            const token = document.getElementById('token').value;
+            if (!token) return alert('Enter a token');
+            
+            // Connect to the WebSocket
+            ws = new WebSocket(`ws://127.0.0.1:8000/ws/sessions/${token}/`);
+
+            ws.onopen = () => log('Connected!');
+            ws.onmessage = (e) => log('Message received: ' + e.data);
+            ws.onclose = (e) => log(`Disconnected. Code: ${e.code}`);
+        }
+
+        function log(msg) {
+            document.getElementById('output').innerText += `\n[${new Date().toLocaleTimeString()}] ${msg}`;
+        }
+    </script>
+</body>
+</html>

@@ -62,3 +62,12 @@ class ReviewCreateView(APIView):
             )
             return Response(ReviewSerializer(review).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+from django.http import HttpResponse
+import os
+from django.conf import settings
+
+def ws_test_page(request):
+    file_path = os.path.join(settings.BASE_DIR, 'ws_test.html')
+    with open(file_path, 'r') as f:
+        return HttpResponse(f.read(), content_type="text/html")
