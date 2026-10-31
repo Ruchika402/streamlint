@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-
+import ssl
 import dj_database_url
 from dotenv import load_dotenv
 
@@ -132,11 +132,20 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 
+redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+redis_options = {}
+if redis_url.startswith("rediss://"):
+    redis_options["ssl_cert_reqs"] = ssl.CERT_NONE
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [os.getenv("REDIS_URL", "redis://localhost:6379/0")],
+            "hosts": [{
+                "address": redis_url,
+                **redis_options
+            }],
         },
     },
 }
