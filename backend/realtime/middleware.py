@@ -1,6 +1,7 @@
 from channels.security.websocket import OriginValidator
 from django.conf import settings
 
+
 class CustomOriginValidator(OriginValidator):
     """
     A custom validator that uses the CORS_ALLOWED_ORIGINS setting.

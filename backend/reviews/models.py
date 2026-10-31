@@ -1,7 +1,9 @@
 import secrets
 from datetime import timedelta
+
 from django.db import models
 from django.utils import timezone
+
 
 class ReviewSession(models.Model):
     token = models.CharField(max_length=32, unique=True, db_index=True)

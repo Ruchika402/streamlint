@@ -1,8 +1,11 @@
+from datetime import timedelta
+
 import pytest
 from django.utils import timezone
-from datetime import timedelta
 from rest_framework.test import APIClient
+
 from reviews.models import ReviewSession
+
 
 @pytest.fixture
 def api_client():

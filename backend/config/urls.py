@@ -1,6 +1,12 @@
 from django.contrib import admin
 from django.urls import path
-from reviews.views import HealthCheckView, SessionCreateView, SessionDetailView, ReviewCreateView, ws_test_page
+from reviews.views import (
+    HealthCheckView,
+    ReviewCreateView,
+    SessionCreateView,
+    SessionDetailView,
+    ws_test_page,
+)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
