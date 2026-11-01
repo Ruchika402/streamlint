@@ -12,10 +12,14 @@ Every browser on the same session link sees the same live stream.
 
 ## Stack
 
-- **Backend:** Django + Channels, Redis , Postgres , Gemini API 
+- **Backend:** Django + Channels (ASGI), Redis (Upstash), Postgres (Neon), Gemini API (free tier)
 - **Frontend:** React + TypeScript (Vite), CodeMirror 6
-- **Hosting:** Vercel . Fallback: Render.
+- **Hosting:** Render (Backend), Vercel (Frontend)
 - **CI:** GitHub Actions
+
+## Live Backend
+
+Check if the server is awake: [Health Check](https://streamlint-backend.onrender.com/health/)
 
 ## Local setup
 
