@@ -15,7 +15,7 @@
             if (!token) return alert('Enter a token');
             
             // Connect to the WebSocket
-            ws = new WebSocket(`ws://127.0.0.1:8000/ws/sessions/${token}/`);
+            ws = new WebSocket(`wss://streamlint-backend.onrender.com/ws/sessions/${token}/`);
 
             ws.onopen = () => log('Connected!');
             ws.onmessage = (e) => log('Message received: ' + e.data);
