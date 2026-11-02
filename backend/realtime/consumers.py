@@ -1,5 +1,6 @@
 import json
-
+import asyncio
+from reviews.services.pipeline import run_review
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.utils import timezone
@@ -40,10 +41,18 @@ class SessionConsumer(AsyncWebsocketConsumer):
     async def receive_json(self, content):
         action = content.get("action")
         if action not in ["ping", "run"]:
-            return  # Ignore any attempt to inject fake events
+            return  
         
         if action == "ping":
             await self.send(text_data=json.dumps({"type": "pong"}))
+        elif action == "run":
+            review_id = content.get("review_id")
+            if review_id:
+                
+                
+                
+                asyncio.create_task(run_review(review_id, self.token))
+                await self.send(text_data=json.dumps({"type": "status", "payload": {"state": "running"}}))
 
     # Forward messages from the group to the WebSocket
     async def session_event(self, event):
