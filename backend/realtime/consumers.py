@@ -1,6 +1,4 @@
 import json
-import asyncio
-from reviews.services.pipeline import run_review
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.utils import timezone
@@ -47,12 +45,20 @@ class SessionConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({"type": "pong"}))
         elif action == "run":
             review_id = content.get("review_id")
+            print(f"🚨 LIVE SERVER RECEIVED RUN COMMAND FOR REVIEW: {review_id}", flush=True)
+            
             if review_id:
+                import asyncio
+                from reviews.services.pipeline import run_review
                 
+                # Send the status FIRST, before starting the task
+                await self.send(text_data=json.dumps({
+                    "type": "status",
+                    "payload": {"state": "running"}
+                }))
                 
-                
+                # Then start the pipeline
                 asyncio.create_task(run_review(review_id, self.token))
-                await self.send(text_data=json.dumps({"type": "status", "payload": {"state": "running"}}))
 
     # Forward messages from the group to the WebSocket
     async def session_event(self, event):
