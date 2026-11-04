@@ -8,6 +8,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from .services.limits import check_rate_limit, get_client_ip
 
 from .models import ReviewSession
 from .serializers import ReviewSerializer, ReviewSessionSerializer
@@ -55,11 +56,21 @@ class ReviewCreateView(APIView):
         if session.expires_at < timezone.now():
             return Response({"error": "Session expired"}, status=status.HTTP_410_GONE)
 
+        visitor_id = request.headers.get("X-Visitor-Id", "unknown")
+        ip_address = get_client_ip(request)
+
+        # Check limits synchronously for DRF
+        import asyncio
+        is_allowed, retry_after, reason = asyncio.run(check_rate_limit(visitor_id, ip_address))
+        
+        if not is_allowed:
+            return Response(
+                {"error": reason, "retry_after": retry_after}, 
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+
         serializer = ReviewSerializer(data=request.data)
         if serializer.is_valid():
-            visitor_id = request.headers.get("X-Visitor-Id", "unknown")
-            
-            # Save the review (code_hash will be calculated in the pipeline later)
             review = serializer.save(
                 session=session,
                 visitor_id=visitor_id,
@@ -69,8 +80,10 @@ class ReviewCreateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 def ws_test_page(request):
     file_path = os.path.join(settings.BASE_DIR, 'ws_test.html')
     with open(file_path, 'r') as f:
         return HttpResponse(f.read(), content_type="text/html")
+
+
+

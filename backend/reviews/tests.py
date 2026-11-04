@@ -2,8 +2,10 @@ from datetime import timedelta
 
 import pytest
 from django.utils import timezone
+from django.urls import reverse
 from rest_framework.test import APIClient
-
+import os
+import redis
 from reviews.models import ReviewSession
 
 
@@ -97,3 +99,12 @@ def test_invalid_language_rejected(api_client, sample_session):
     response = api_client.post(url, data, format="json")
     assert response.status_code == 400
     assert "language" in response.json()
+
+@pytest.fixture(autouse=True)
+def clear_redis():
+    """Clear Redis rate limits before every test so they don't interfere."""
+    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    r = redis.from_url(redis_url)
+    r.flushdb()
+    yield
+    r.flushdb()
