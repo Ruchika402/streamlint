@@ -2,7 +2,6 @@ from datetime import timedelta
 
 import pytest
 from django.utils import timezone
-from django.urls import reverse
 from rest_framework.test import APIClient
 import os
 import redis
