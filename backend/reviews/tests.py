@@ -1,12 +1,11 @@
 from datetime import timedelta
-
 import pytest
 from django.utils import timezone
 from rest_framework.test import APIClient
+from unittest.mock import patch
 import os
 import redis
 from reviews.models import ReviewSession
-
 
 @pytest.fixture
 def api_client():
@@ -18,6 +17,21 @@ def sample_session():
         language="python",
         creator_visitor_id="test-visitor-id"
     )
+
+@pytest.fixture(autouse=True)
+def clear_redis():
+    """Clear Redis rate limits before every test so they don't interfere."""
+    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    r = redis.from_url(redis_url)
+    r.flushdb()
+    yield
+    r.flushdb()
+
+@pytest.fixture(autouse=True)
+def bypass_captcha():
+    """Mock the Turnstile check so tests don't need a real token."""
+    with patch("reviews.views.verify_turnstile", return_value=True):
+        yield
 
 # --- Health Check ---
 
@@ -61,7 +75,8 @@ def test_expired_session_returns_410(api_client, sample_session):
 @pytest.mark.django_db
 def test_create_review(api_client, sample_session):
     url = f"/api/sessions/{sample_session.token}/reviews/"
-    data = {"code": "print('hello')", "language": "python"}
+    # Added turnstile_token here
+    data = {"code": "print('hello')", "language": "python", "turnstile_token": "dummy"}
     response = api_client.post(url, data, format="json", HTTP_X_VISITOR_ID="test-id")
     
     assert response.status_code == 201
@@ -71,7 +86,8 @@ def test_create_review(api_client, sample_session):
 @pytest.mark.django_db
 def test_empty_code_rejected(api_client, sample_session):
     url = f"/api/sessions/{sample_session.token}/reviews/"
-    data = {"code": "   ", "language": "python"}
+    # Added turnstile_token here
+    data = {"code": "   ", "language": "python", "turnstile_token": "dummy"}
     response = api_client.post(url, data, format="json")
     assert response.status_code == 400
     assert "code" in response.json()
@@ -79,7 +95,8 @@ def test_empty_code_rejected(api_client, sample_session):
 @pytest.mark.django_db
 def test_too_long_code_rejected(api_client, sample_session):
     url = f"/api/sessions/{sample_session.token}/reviews/"
-    data = {"code": "a" * 20001, "language": "python"}
+    # Added turnstile_token here
+    data = {"code": "a" * 20001, "language": "python", "turnstile_token": "dummy"}
     response = api_client.post(url, data, format="json")
     assert response.status_code == 400
     assert "code" in response.json()
@@ -87,23 +104,16 @@ def test_too_long_code_rejected(api_client, sample_session):
 @pytest.mark.django_db
 def test_too_many_lines_rejected(api_client, sample_session):
     url = f"/api/sessions/{sample_session.token}/reviews/"
-    data = {"code": "a\n" * 301, "language": "python"}
+    # Added turnstile_token here
+    data = {"code": "a\n" * 301, "language": "python", "turnstile_token": "dummy"}
     response = api_client.post(url, data, format="json")
     assert response.status_code == 400
 
 @pytest.mark.django_db
 def test_invalid_language_rejected(api_client, sample_session):
     url = f"/api/sessions/{sample_session.token}/reviews/"
-    data = {"code": "print(1)", "language": "ruby"}
+    # Added turnstile_token here
+    data = {"code": "print(1)", "language": "ruby", "turnstile_token": "dummy"}
     response = api_client.post(url, data, format="json")
     assert response.status_code == 400
     assert "language" in response.json()
-
-@pytest.fixture(autouse=True)
-def clear_redis():
-    """Clear Redis rate limits before every test so they don't interfere."""
-    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-    r = redis.from_url(redis_url)
-    r.flushdb()
-    yield
-    r.flushdb()

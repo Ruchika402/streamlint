@@ -9,6 +9,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .services.limits import check_rate_limit, get_client_ip
+from .services.captcha import verify_turnstile
 
 from .models import ReviewSession
 from .serializers import ReviewSerializer, ReviewSessionSerializer
@@ -68,6 +69,16 @@ class ReviewCreateView(APIView):
                 {"error": reason, "retry_after": retry_after}, 
                 status=status.HTTP_429_TOO_MANY_REQUESTS
             )
+
+        # --- START CAPTCHA CHECK ---
+        turnstile_token = request.data.get("turnstile_token")
+        if not turnstile_token:
+            return Response({"error": "CAPTCHA token missing"}, status=status.HTTP_400_BAD_REQUEST)
+
+        captcha_ok = asyncio.run(verify_turnstile(turnstile_token, ip_address))
+        if not captcha_ok:
+            return Response({"error": "CAPTCHA verification failed"}, status=status.HTTP_400_BAD_REQUEST)
+        # --- END CAPTCHA CHECK ---
 
         serializer = ReviewSerializer(data=request.data)
         if serializer.is_valid():
