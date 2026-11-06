@@ -16,6 +16,7 @@
             
             // Connect to the WebSocket
             ws = new WebSocket(`wss://streamlint-backend.onrender.com/ws/sessions/${token}/`);
+            //ws = new WebSocket(`ws://127.0.0.1:8000/ws/sessions/${token}/`);
 
             ws.onopen = () => log('Connected!');
             ws.onmessage = (e) => log('Message received: ' + e.data);

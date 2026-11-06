@@ -6,6 +6,7 @@ import redis.asyncio as redis
 from django.utils import timezone
 from google import genai
 from google.genai import types
+from channels.layers import get_channel_layer
 
 from reviews.models import Review
 from reviews.services.static import run_ruff
@@ -16,22 +17,21 @@ from realtime.events import issue_event, status_event
 logger = logging.getLogger(__name__)
 
 async def run_review(review_id: int, token: str):
-    """
-    The main pipeline that runs ruff, then streams Gemini.
-    """
     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     r = redis.from_url(redis_url, decode_responses=True)
     lock_key = f"lock:{token}"
     group_name = f"session_{token}"
 
-    # 1. Take the Redis lock (prevent concurrent reviews)
+    channel_layer = get_channel_layer()
+
+    # 1. Take the Redis lock
     lock_acquired = await r.set(lock_key, "locked", nx=True, ex=120)
     if not lock_acquired:
         await r.aclose()
-        return # Someone else is already running a review
+        return
 
     try:
-        # 2. Update DB status to running & emit event
+        # 2. Update DB status
         review = await Review.objects.aget(id=review_id)
         review.status = "running"
         await review.asave()
@@ -55,9 +55,8 @@ async def run_review(review_id: int, token: str):
         seq += 1
 
         # 4. Stream Gemini
-        api_key = os.getenv("GEMINI_API_KEY").strip()
+        api_key = os.getenv("GEMINI_API_KEY", "").strip()
         model_name = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
-        
         
         client = genai.Client(api_key=api_key)
         prompt = build_prompt(code, language, ruff_findings)
@@ -66,48 +65,42 @@ async def run_review(review_id: int, token: str):
         all_issues = []
         summary_data = None
 
-        # We use a 60-second timeout for the whole stream
         async def stream_gemini():
             nonlocal buffer, seq, summary_data
-            try:
-                response = await client.aio.models.generate_content_stream(
-                    model=model_name,
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        max_output_tokens=2000,
-                    )
+            response = await client.aio.models.generate_content_stream(
+                model=model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    max_output_tokens=2000,
                 )
-                
-                async for chunk in response:
-                    if chunk.text:
-                        parsed, buffer = parse_stream_chunk(chunk.text, buffer)
-                        for item in parsed:
-                            if item["type"] == "issue":
-                                all_issues.append(item["data"])
-                                event = issue_event(
-                                    review_id,
-                                    line=item["data"].get("line", 0),
-                                    severity=item["data"].get("severity", "info"),
-                                    category=item["data"].get("category", "style"),
-                                    message=item["data"].get("message", ""),
-                                    suggestion=item["data"].get("suggestion", ""),
-                                    seq=seq
-                                )
-                                await broadcast(group_name, event)
-                                seq += 1
-                            elif item["type"] == "summary":
-                                summary_data = item["data"]
-                                
-            except Exception as e:
-                logger.error(f"Gemini stream error: {e}")
-                raise
+            )
+            
+            async for chunk in response:
+                if chunk.text:
+                    parsed, buffer = parse_stream_chunk(chunk.text, buffer)
+                    for item in parsed:
+                        if item["type"] == "issue":
+                            all_issues.append(item["data"])
+                            event = issue_event(
+                                review_id,
+                                line=item["data"].get("line", 0),
+                                severity=item["data"].get("severity", "info"),
+                                category=item["data"].get("category", "style"),
+                                message=item["data"].get("message", ""),
+                                suggestion=item["data"].get("suggestion", ""),
+                                seq=seq
+                            )
+                            await broadcast(group_name, event)
+                            seq += 1
+                        elif item["type"] == "summary":
+                            summary_data = item["data"]
 
-                # Run the stream with a timeout and retry logic
+        # Run the stream with retries
         max_retries = 3
         for attempt in range(max_retries):
             try:
                 await asyncio.wait_for(stream_gemini(), timeout=120.0)
-                break # It worked! Exit the loop.
+                break
             except asyncio.TimeoutError:
                 logger.error("Gemini stream timed out.")
                 if attempt == max_retries - 1:
@@ -119,7 +112,27 @@ async def run_review(review_id: int, token: str):
                 else:
                     raise e
 
-        # 5. Save to Postgres and emit summary
+        # 5. FLUSH THE BUFFER (The crucial fix!)
+        if buffer.strip():
+            parsed, _ = parse_stream_chunk("\n", buffer)
+            for item in parsed:
+                if item["type"] == "issue":
+                    all_issues.append(item["data"])
+                    event = issue_event(
+                        review_id,
+                        line=item["data"].get("line", 0),
+                        severity=item["data"].get("severity", "info"),
+                        category=item["data"].get("category", "style"),
+                        message=item["data"].get("message", ""),
+                        suggestion=item["data"].get("suggestion", ""),
+                        seq=seq
+                    )
+                    await broadcast(group_name, event)
+                    seq += 1
+                elif item["type"] == "summary":
+                    summary_data = item["data"]
+
+        # 6. Save to Postgres
         review.issues = all_issues
         review.summary = str(summary_data) if summary_data else "Review complete."
         review.status = "done"
@@ -138,31 +151,37 @@ async def run_review(review_id: int, token: str):
         await broadcast(group_name, status_event(review_id, "done", seq))
 
     except Exception as e:
-        logger.error(f"Pipeline error: {e}")
-        review = await Review.objects.aget(id=review_id)
-        review.status = "failed"
-        review.error = str(e)
-        await review.asave()
-        await broadcast(group_name, status_event(review_id, "failed", 99))
+        logger.exception(f"Pipeline error: {e}")
+        try:
+            review = await Review.objects.aget(id=review_id)
+            review.status = "failed"
+            review.error = str(e)
+            await review.asave()
+        except Exception:
+            pass
+        
+        await broadcast(group_name, {
+            "type": "error",
+            "review_id": review_id,
+            "seq": 99,
+            "payload": {"message": str(e)}
+        })
         
     finally:
-        # 6. Always release the lock
         await r.delete(lock_key)
         await r.aclose()
 
 async def broadcast(group_name: str, event: dict):
-    """Helper to send to the WebSocket group AND save to the Redis list."""
+    """Send to WebSocket and save to Redis list."""
     from channels.layers import get_channel_layer
     channel_layer = get_channel_layer()
     
-    # Send to live viewers
     await channel_layer.group_send(group_name, {"type": "session.event", "message": event})
     
-    # Save for late joiners
     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     r = redis.from_url(redis_url, decode_responses=True)
-    list_key = f"events:{event['review_id']}"
+    list_key = f"events:{event.get('review_id', 0)}"
     
     await r.rpush(list_key, json.dumps(event))
-    await r.expire(list_key, 86400) # 24-hour TTL
+    await r.expire(list_key, 86400)
     await r.aclose()
