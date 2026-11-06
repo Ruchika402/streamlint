@@ -26,7 +26,7 @@ export default function TurnstileBox({ onVerify }: TurnstileBoxProps) {
     }
 
     function renderWidget() {
-      if (containerRef.current) {
+      if (containerRef.current&& !containerRef.current.hasChildNodes()) {
         window.turnstile.render(containerRef.current, {
           // Replace with your real Site Key from Cloudflare Dashboard
           sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA', // Test key
