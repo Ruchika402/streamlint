@@ -6,7 +6,7 @@ import redis.asyncio as redis
 from django.utils import timezone
 from google import genai
 from google.genai import types
-from channels.layers import get_channel_layer
+
 
 from reviews.models import Review
 from reviews.services.static import run_ruff
@@ -22,7 +22,7 @@ async def run_review(review_id: int, token: str):
     lock_key = f"lock:{token}"
     group_name = f"session_{token}"
 
-    channel_layer = get_channel_layer()
+    
 
     # 1. Take the Redis lock
     lock_acquired = await r.set(lock_key, "locked", nx=True, ex=120)
