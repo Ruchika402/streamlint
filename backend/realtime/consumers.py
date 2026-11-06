@@ -5,6 +5,8 @@ from reviews.models import ReviewSession, Review
 import asyncio
 import os
 import redis.asyncio as redis
+from reviews.services.nickname import generate_nickname
+from urllib.parse import parse_qs
 
 class SessionConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -21,6 +23,28 @@ class SessionConsumer(AsyncJsonWebsocketConsumer):
         # 2. Join the group and accept the connection
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
+
+        query_string = self.scope.get("query_string", b"").decode("utf-8")
+        query_params = parse_qs(query_string)
+        visitor_id = query_params.get("visitor_id", ["unknown"])[0]
+        
+        nickname = generate_nickname(visitor_id)
+
+        await self.channel_layer.group_send(
+            self.group_name,
+            {
+                "type": "session.event",
+                "message": {
+                    "type": "presence",
+                    "payload": {
+                        "count": 1, 
+                        "viewers": [{"nickname": nickname, "status": "watching live"}]
+                    }
+                }
+            }
+        )
+
+
         await self.replay_events()
 
     async def disconnect(self, close_code):

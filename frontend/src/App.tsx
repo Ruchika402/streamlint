@@ -5,14 +5,18 @@ import { streamlintExtensions } from './editor/theme';
 import { useVisitorId } from './hooks/useVisitorId';
 import { setIssuesEffect } from './editor/annotations';
 import { EditorView } from '@codemirror/view';
+import TurnstileBox from './components/TurnstileBox';
+import Sparkles from './components/Sparkles';
 
 function App() {
   const [code, setCode] = useState('import os\nprint("Welcome to Streamlint!")');
   const [status, setStatus] = useState('idle');
   const [issues, setIssues] = useState<any[]>([]);
   const [token, setToken] = useState<string | null>(null);
+  const [viewers, setViewers] = useState<any[]>([]);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  
   const editorViewRef = useRef<EditorView | null>(null);
-
   const visitorId = useVisitorId();
 
   // Calculate severity counts for the summary card
@@ -24,6 +28,11 @@ function App() {
 
   const handleReview = async () => {
     if (!visitorId) return;
+    if (!captchaToken) {
+      alert("Please complete the Cloudflare verification at the bottom of the page first.");
+      return;
+    }
+    
     setStatus('running');
     setIssues([]);
     setToken(null);
@@ -32,7 +41,8 @@ function App() {
       // 1. Create Session
       //const res = await fetch('http://127.0.0.1:8000/api/sessions/', {
       const res = await fetch('https://streamlint-backend.onrender.com/api/sessions/', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ language: 'python' })
       });
       const session = await res.json();
@@ -43,26 +53,43 @@ function App() {
       const revRes = await fetch(`https://streamlint-backend.onrender.com/api/sessions/...`, {
         method: 'POST', 
         headers: { 'Content-Type': 'application/json', 'X-Visitor-Id': visitorId },
-        body: JSON.stringify({ code, language: 'python', turnstile_token: 'dummy' })
+        body: JSON.stringify({ code, language: 'python', turnstile_token: captchaToken })
       });
+      
       const review = await revRes.json();
 
+      if (!revRes.ok) {
+        setStatus('failed');
+        alert(review.error || "Something went wrong");
+        return;
+      }
+
       // 3. Connect WebSocket
-      //const ws = new WebSocket(`ws://127.0.0.1:8000/ws/sessions/${session.token}/`);
-      const ws = new WebSocket(`wss://streamlint-backend.onrender.com/ws/sessions/...`);
+      const ws = new WebSocket(`ws://127.0.0.1:8000/ws/sessions/${session.token}/?visitor_id=${visitorId}`);
+      //const ws = new WebSocket(`wss://streamlint-backend.onrender.com/ws/sessions/...`);
       ws.onopen = () => {
         setTimeout(() => ws.send(JSON.stringify({ action: 'run', review_id: review.id })), 500);
       };
+      
       ws.onmessage = (e) => {
         const data = JSON.parse(e.data);
         if (data.type === 'issue') setIssues(prev => [...prev, data.payload]);
         if (data.type === 'status') setStatus(data.payload.state);
+        if (data.type === 'presence') setViewers(data.payload.viewers);
       };
+      
+      ws.onclose = () => {
+        console.log('WebSocket disconnected.');
+        if (status !== 'done') setStatus('failed');
+      };
+
     } catch (err) {
       console.error(err);
       setStatus('failed');
     }
   };
+
+  // Update CodeMirror annotations when issues change
   useEffect(() => {
     if (editorViewRef.current) {
       editorViewRef.current.dispatch({
@@ -70,8 +97,10 @@ function App() {
       });
     }
   }, [issues]);
+
   return (
     <div className="app-container">
+      <Sparkles />
       <header className="header-bar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -107,7 +136,14 @@ function App() {
               </div>
             </div>
             <div style={{ borderRadius: '14px', overflow: 'hidden', border: '1px solid var(--border)' }}>
-              <CodeMirror value={code} height="300px" extensions={[python(), ...streamlintExtensions]} onChange={setCode} theme="dark"  onCreateEditor={(view) => { editorViewRef.current = view; }} />
+              <CodeMirror 
+                value={code} 
+                height="300px" 
+                extensions={[python(), ...streamlintExtensions]} 
+                onChange={setCode} 
+                theme="dark" 
+                onCreateEditor={(view) => { editorViewRef.current = view; }} 
+              />
             </div>
             <div style={{ marginTop: '12px', fontSize: '13px', color: 'var(--muted)' }}>
               Sessions are deleted after 7 days. Please don’t paste private code.
@@ -160,19 +196,28 @@ function App() {
             <div className="card" style={{ flex: 1, animation: 'fadeIn 0.4s ease-out' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink)' }}>In this session</h3>
-                <span style={{ background: 'var(--lilac-bg)', color: 'var(--lilac-ink)', padding: '2px 8px', borderRadius: '999px', fontSize: '12px', fontWeight: 600 }}>1 viewing</span>
+                <span style={{ background: 'var(--lilac-bg)', color: 'var(--lilac-ink)', padding: '2px 8px', borderRadius: '999px', fontSize: '12px', fontWeight: 600 }}>{viewers.length} viewing</span>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#FFD1E3', color: '#A61E4D', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '14px' }}>Y</div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>You</p>
-                    <p style={{ fontSize: '13px', color: 'var(--muted)' }}>started the review</p>
-                  </div>
-                </li>
+                                {viewers.map((v, i) => (
+                  <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#FFD1E3', color: '#A61E4D', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '14px' }}>
+                      {v.nickname.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>{v.nickname}</p>
+                      <p style={{ fontSize: '13px', color: 'var(--muted)' }}>{v.status}</p>
+                    </div>
+                  </li>
+                ))}
               </ul>
             </div>
           )}
+
+          {/* TURNSTILE BOX */}
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '16px 0' }}>
+            <TurnstileBox onVerify={(token) => setCaptchaToken(token)} />
+          </div>
 
         </div>
 
@@ -200,6 +245,17 @@ function App() {
             </div>
           ))}
         </div>
+          {/* LOADING CARD */}
+          {status === 'running' && (
+            <div className="card result-card" style={{ animation: 'fadeIn 0.2s ease-out', borderStyle: 'dashed', borderWidth: '1.5px', borderColor: 'var(--border-strong)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent)', animation: 'pulse 1.4s infinite' }} />
+                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--muted)' }}>Reviewing your code…</span>
+              </div>
+              <div style={{ height: '10px', background: 'var(--tint)', borderRadius: '6px', width: '92%', marginBottom: '8px' }} />
+              <div style={{ height: '10px', background: 'var(--tint)', borderRadius: '6px', width: '64%' }} />
+            </div>
+          )}
       </main>
       
       <footer className="footer">Streamlint · paste code, watch the review stream in, share the link</footer>
