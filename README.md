@@ -6,7 +6,7 @@ then Gemini's AI review streamed issue-by-issue, pinned to line numbers.
 Every browser on the same session link sees the same live stream.
 
 <p align="center">
-  <img src="frontend/public/streamlint-demo.png" alt="Streamlint Demo" width="800" style="border-radius: 12px; box-shadow: 0 8px 24px rgba(166,30,77,0.15);" />
+  <img src="frontend/public/streamlint-demo.png" alt="Streamlint Demo" width="400" style="border-radius: 12px; box-shadow: 0 8px 24px rgba(166,30,77,0.15);" />
 </p>
 
 **Status:** 🚧 In development 
