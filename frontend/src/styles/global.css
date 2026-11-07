@@ -23,27 +23,24 @@ button, input, select { font-family: inherit; }
 
 .header-bar { 
   background: var(--surface); 
-  padding: 16px 32px; 
+  padding: 16px; 
   border-bottom: 1px solid var(--border); 
   display: flex; 
+  flex-wrap: wrap; 
   justify-content: space-between; 
   align-items: center; 
-  position: relative;
-  z-index: 10;
+  gap: 12px; 
 }
 
 .main-grid { 
   flex: 1; 
-  padding: 28px 32px; 
-  max-width: 1360px; 
+  padding: 28px 16px; 
   margin: 0 auto; 
   width: 100%; 
   display: grid; 
-  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); 
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); 
   gap: 24px; 
   align-items: start; 
-  position: relative;
-  z-index: 10;
 }
 
 .card { 

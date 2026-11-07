@@ -1,7 +1,8 @@
 <h1 align="center">
-  <img src="https://streamlint.vercel.app/favicon.svg" alt="Streamlint Logo" width="40" height="40" style="vertical-align: middle; margin-right: 10px;">
-  <span style="vertical-align: middle;">Streamlint</span>
+  <img src="https://streamlint.vercel.app/favicon.svg" alt="Streamlint Logo" width="30" height="30" style="vertical-align: middle; margin-right: 10px;">
+  <span style="vertical-align: middle ;">Streamlint</span>
 </h1>
+
 
 <p align="center">
   <a href="https://streamlint.vercel.app">

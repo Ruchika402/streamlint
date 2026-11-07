@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://streamlint.vercel.app/</loc></url>
+  <url><loc>https://streamlint.vercel.app/python-code-review</loc></url>
+  <url><loc>https://streamlint.vercel.app/django-code-review</loc></url>
+  <url><loc>https://streamlint.vercel.app/javascript-code-review</loc></url>
+  <url><loc>https://streamlint.vercel.app/java-code-review</loc></url>
+  <url><loc>https://streamlint.vercel.app/c-code-review</loc></url>
+  <url><loc>https://streamlint.vercel.app/cpp-code-review</loc></url>
+  <url><loc>https://streamlint.vercel.app/csharp-code-review</loc></url>
+  <url><loc>https://streamlint.vercel.app/go-code-review</loc></url>
+  <url><loc>https://streamlint.vercel.app/rust-code-review</loc></url>
+  <url><loc>https://streamlint.vercel.app/ruby-code-review</loc></url>
+  <url><loc>https://streamlint.vercel.app/php-code-review</loc></url>
+  <url><loc>https://streamlint.vercel.app/html-code-review</loc></url>
+  <url><loc>https://streamlint.vercel.app/swift-code-review</loc></url>
+  <url><loc>https://streamlint.vercel.app/r-code-review</loc></url>
+  <url><loc>https://streamlint.vercel.app/sql-code-review</loc></url>
+</urlset>
