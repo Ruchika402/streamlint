@@ -31,16 +31,13 @@ class SessionConsumer(AsyncJsonWebsocketConsumer):
         r = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True)
         presence_key = f"presence:{self.token}"
         
-        # Store the visitor ID and nickname as a JSON string in a set
-        import json
-        presence_data = json.dumps({"id": self.visitor_id, "nickname": self.nickname})
-        await r.sadd(presence_key, presence_data)
+        await r.hset(presence_key, self.visitor_id, self.nickname)
         await r.expire(presence_key, 86400) # 24 hour TTL
         
         # Get all current viewers
-        all_viewers_data = await r.smembers(presence_key)
-        viewers_list = [json.loads(v) for v in all_viewers_data]
-        viewer_count = len(viewers_list)
+        all_viewers = await r.hgetall(presence_key)
+        viewer_count = len(all_viewers)
+        viewers_list = [{"nickname": nickname, "status": "watching live"} for nickname in all_viewers.values()]
 
         # 3. Join the group and accept
         await self.channel_layer.group_add(self.group_name, self.channel_name)
@@ -55,7 +52,7 @@ class SessionConsumer(AsyncJsonWebsocketConsumer):
                     "type": "presence",
                     "payload": {
                         "count": viewer_count, 
-                        "viewers": [{"nickname": v["nickname"], "status": "watching live"} for v in viewers_list]
+                        "viewers": viewers_list
                     }
                 }
             }
@@ -73,14 +70,12 @@ class SessionConsumer(AsyncJsonWebsocketConsumer):
             r = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True)
             presence_key = f"presence:{self.token}"
             
-            import json
-            presence_data = json.dumps({"id": self.visitor_id, "nickname": self.nickname})
-            await r.srem(presence_key, presence_data)
+            await r.srem(presence_key, self.visitor_id)
             
             # Get updated viewers
-            all_viewers_data = await r.smembers(presence_key)
-            viewers_list = [json.loads(v) for v in all_viewers_data]
-            viewer_count = len(viewers_list)
+            all_viewers = await r.hgetall(presence_key)
+            viewer_count = len(all_viewers)
+            viewers_list = [{"nickname": nickname, "status": "watching live"} for nickname in all_viewers.values()]
 
             # Broadcast updated presence
             await self.channel_layer.group_send(
@@ -91,7 +86,7 @@ class SessionConsumer(AsyncJsonWebsocketConsumer):
                         "type": "presence",
                         "payload": {
                             "count": viewer_count, 
-                            "viewers": [{"nickname": v["nickname"], "status": "watching live"} for v in viewers_list]
+                            "viewers": viewers_list
                         }
                     }
                 }
