@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="frontend/public/favicon.ico" alt="Streamlint Logo" width="40" height="40">
+  <img src="frontend/public/favicon.svg" alt="Streamlint Logo" width="40" height="40">
   Streamlint
 </h1>
 
