@@ -4,6 +4,16 @@ import { python } from '@codemirror/lang-python';
 import { javascript } from '@codemirror/lang-javascript';
 import { java } from '@codemirror/lang-java';
 import { cpp } from '@codemirror/lang-cpp';
+import { csharp } from '@replit/codemirror-lang-csharp';
+import { go } from '@codemirror/lang-go';
+import { rust } from '@codemirror/lang-rust';
+import { ruby } from 'codemirror-lang-ruby';
+import { php } from '@codemirror/lang-php';
+import { sql } from '@codemirror/lang-sql';
+import { html } from '@codemirror/lang-html';
+import { swift } from '@fazelstudio/codemirror-lang-swift';
+import { StreamLanguage } from '@codemirror/language';
+import { r as legacyR } from '@codemirror/legacy-modes/mode/r';
 import { streamlintExtensions } from '../editor/theme';
 import { useVisitorId } from '../hooks/useVisitorId';
 import { setIssuesEffect } from '../editor/annotations';
@@ -36,7 +46,17 @@ export default function SessionPage() {
     switch (language) {
       case 'javascript': return javascript();
       case 'java': return java();
+      case 'c': return cpp();
       case 'cpp': return cpp();
+      case 'csharp': return csharp();
+      case 'go': return go();
+      case 'rust': return rust();
+      case 'ruby': return ruby();
+      case 'php': return php();
+      case 'sql': return sql();
+      case 'html': return html();
+      case 'swift': return swift();
+      case 'r': return StreamLanguage.define(legacyR);
       default: return python();
     }
   };
@@ -191,9 +211,19 @@ export default function SessionPage() {
               >
                 <option value="python">Python</option>
                 <option value="django">Django</option>
+                <option value="c">C</option>
                 <option value="javascript">JavaScript</option>
                 <option value="java">Java</option>
                 <option value="cpp">C++</option>
+                <option value="csharp">C#</option>
+                <option value="go">Go</option>
+                <option value="rust">Rust</option>
+                <option value="ruby">Ruby</option>
+                <option value="php">PHP</option>
+                <option value="html">HTML</option>
+                <option value="swift">Swift</option>
+                <option value="r">R</option>
+                <option value="sql">SQL</option>
               </select>
               
                             {!urlToken && (
@@ -204,7 +234,17 @@ export default function SessionPage() {
                     onClick={() => {
                       if (language === 'javascript') setCode('function divide(a, b) {\n  return a / b;\n}\nconsole.log(divide(10, 0));');
                       else if (language === 'java') setCode('public class Main {\n  public static void main(String[] args) {\n    int x = 10 / 0;\n  }\n}');
+                      else if (language === 'c') setCode('int main() {\n  int* p = NULL;\n  return *p;\n}');
                       else if (language === 'cpp') setCode('int main() {\n  int* p = nullptr;\n  return *p;\n}');
+                      else if (language === 'csharp') setCode('public class Program {\n  public static void Main() {\n    int x = 10 / 0;\n  }\n}');
+                      else if (language === 'go') setCode('package main\n\nfunc main() {\n  var a int = 10\n  var b int = 0\n  println(a / b)\n}');
+                      else if (language === 'rust') setCode('fn main() {\n  let x: i32 = 10;\n  let y: i32 = 0;\n  println!("{}", x / y);\n}');
+                      else if (language === 'ruby') setCode('def divide(a, b)\n  a / b\nend\n\nputs divide(10, 0)');
+                      else if (language === 'php') setCode('<?php\nfunction divide($a, $b) {\n  return $a / $b;\n}\necho divide(10, 0);\n?>');
+                      else if (language === 'html') setCode('<div>\n  <p>Hello World</p>\n</div>');
+                      else if (language === 'swift') setCode('let x: Int = 10\nlet y: Int = 0\nlet z = x / y');
+                      else if (language === 'sql') setCode('SELECT * FROM users WHERE id = " + user_input + ";');
+                      else if (language === 'r') setCode('x <- c(1, 2, 3)\ny <- mean(x)\nprint(y)');
                       else setCode('def divide(a, b):\n    return a / b\n\nprint(divide(10, 0))');
                     }}
                     className="btn-secondary"

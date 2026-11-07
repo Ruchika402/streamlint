@@ -24,7 +24,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         return value
 
     def validate_language(self, value):
-        allowed = ["python", "django", "javascript", "java", "cpp"]
+        allowed = ["python", "django", "javascript", "java", "c", "cpp", "csharp", "go", "rust", "ruby", "php","html", "swift", "R", "sql"]
         if value not in allowed:
             raise serializers.ValidationError(f"Language must be one of: {', '.join(allowed)}")
         return value

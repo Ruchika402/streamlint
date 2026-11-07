@@ -112,8 +112,8 @@ def test_too_many_lines_rejected(api_client, sample_session):
 @pytest.mark.django_db
 def test_invalid_language_rejected(api_client, sample_session):
     url = f"/api/sessions/{sample_session.token}/reviews/"
-    # Added turnstile_token here
-    data = {"code": "print(1)", "language": "ruby", "turnstile_token": "dummy"}
+    # Use a language that is NOT in our allowed list
+    data = {"code": "print(1)", "language": "cobol", "turnstile_token": "dummy"}
     response = api_client.post(url, data, format="json")
     assert response.status_code == 400
     assert "language" in response.json()
