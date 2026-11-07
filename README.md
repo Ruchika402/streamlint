@@ -1,6 +1,6 @@
 <h1 align="center">
   <img src="frontend/public/favicon.svg" alt="Streamlint Logo" width="40" height="40">
-  Streamlint
+  <span style="vertical-align: middle;">Streamlint</span>
 </h1>
 
 <p align="center">
