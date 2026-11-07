@@ -37,7 +37,11 @@ async def run_review(review_id: int, token: str):
         await review.asave()
 
         seq = 1
-        await broadcast(group_name, status_event(review_id, "running", seq))
+        # Send status WITH the code and language so viewers can load it
+        running_event = status_event(review_id, "running", seq)
+        running_event["payload"]["code"] = review.code
+        running_event["payload"]["language"] = review.language
+        await broadcast(group_name, running_event)
         seq += 1
 
         # 3. Run Ruff

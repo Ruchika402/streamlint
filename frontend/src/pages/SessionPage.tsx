@@ -75,7 +75,11 @@ export default function SessionPage() {
       ws.onmessage = (e) => {
         const data = JSON.parse(e.data);
         if (data.type === 'issue') setIssues(prev => [...prev, data.payload]);
-        if (data.type === 'status') setStatus(data.payload.state);
+        if (data.type === 'status') {
+          setStatus(data.payload.state);
+          if (data.payload.code) setCode(data.payload.code);
+          if (data.payload.language) setLanguage(data.payload.language);
+        }
         if (data.type === 'presence') setViewers(data.payload.viewers);
       };
       
@@ -129,7 +133,11 @@ export default function SessionPage() {
       ws.onmessage = (e) => {
         const data = JSON.parse(e.data);
         if (data.type === 'issue') setIssues(prev => [...prev, data.payload]);
-        if (data.type === 'status') setStatus(data.payload.state);
+        if (data.type === 'status') {
+          setStatus(data.payload.state);
+          if (data.payload.code) setCode(data.payload.code);
+          if (data.payload.language) setLanguage(data.payload.language);
+        }
         if (data.type === 'presence') setViewers(data.payload.viewers);
       };
       

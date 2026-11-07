@@ -12,24 +12,41 @@ class SessionConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         self.token = self.scope["url_route"]["kwargs"]["token"]
         self.group_name = f"session_{self.token}"
+        self.visitor_id = "unknown"
+        self.nickname = "Anonymous"
 
         # 1. Validate token exists and isn't expired BEFORE accepting
         is_valid = await self.check_session_valid()
         if not is_valid:
-            # 4404 = Not Found / Invalid token
             await self.close(code=4404)
             return
+        
+        # Get visitor info
+        query_string = self.scope.get("query_string", b"").decode("utf-8")
+        query_params = parse_qs(query_string)
+        self.visitor_id = query_params.get("visitor_id", ["unknown"])[0]
+        self.nickname = generate_nickname(self.visitor_id)
 
-        # 2. Join the group and accept the connection
+        # 2. Track presence in Redis
+        r = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True)
+        presence_key = f"presence:{self.token}"
+        
+        # Store the visitor ID and nickname as a JSON string in a set
+        import json
+        presence_data = json.dumps({"id": self.visitor_id, "nickname": self.nickname})
+        await r.sadd(presence_key, presence_data)
+        await r.expire(presence_key, 86400) # 24 hour TTL
+        
+        # Get all current viewers
+        all_viewers_data = await r.smembers(presence_key)
+        viewers_list = [json.loads(v) for v in all_viewers_data]
+        viewer_count = len(viewers_list)
+
+        # 3. Join the group and accept
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
 
-        query_string = self.scope.get("query_string", b"").decode("utf-8")
-        query_params = parse_qs(query_string)
-        visitor_id = query_params.get("visitor_id", ["unknown"])[0]
-        
-        nickname = generate_nickname(visitor_id)
-
+        # 4. Broadcast updated presence to EVERYONE
         await self.channel_layer.group_send(
             self.group_name,
             {
@@ -37,20 +54,49 @@ class SessionConsumer(AsyncJsonWebsocketConsumer):
                 "message": {
                     "type": "presence",
                     "payload": {
-                        "count": 1, 
-                        "viewers": [{"nickname": nickname, "status": "watching live"}]
+                        "count": viewer_count, 
+                        "viewers": [{"nickname": v["nickname"], "status": "watching live"} for v in viewers_list]
                     }
                 }
             }
         )
+        await r.aclose()
 
-
+        # 5. Replay past events for late joiners
         await self.replay_events()
 
     async def disconnect(self, close_code):
         if hasattr(self, "group_name"):
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
+            
+            # Remove from presence set
+            r = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True)
+            presence_key = f"presence:{self.token}"
+            
+            import json
+            presence_data = json.dumps({"id": self.visitor_id, "nickname": self.nickname})
+            await r.srem(presence_key, presence_data)
+            
+            # Get updated viewers
+            all_viewers_data = await r.smembers(presence_key)
+            viewers_list = [json.loads(v) for v in all_viewers_data]
+            viewer_count = len(viewers_list)
 
+            # Broadcast updated presence
+            await self.channel_layer.group_send(
+                self.group_name,
+                {
+                    "type": "session.event",
+                    "message": {
+                        "type": "presence",
+                        "payload": {
+                            "count": viewer_count, 
+                            "viewers": [{"nickname": v["nickname"], "status": "watching live"} for v in viewers_list]
+                        }
+                    }
+                }
+            )
+            await r.aclose()
     @database_sync_to_async
     def check_session_valid(self):
         try:
@@ -60,6 +106,7 @@ class SessionConsumer(AsyncJsonWebsocketConsumer):
             return True
         except ReviewSession.DoesNotExist:
             return False
+        
     @database_sync_to_async
     def get_latest_review_id(self):
         latest = Review.objects.filter(session__token=self.token).order_by("-created_at").first()
