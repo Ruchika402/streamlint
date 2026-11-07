@@ -34,6 +34,9 @@ export default function SessionPage() {
   
   const editorViewRef = useRef<EditorView | null>(null);
   const visitorId = useVisitorId();
+  const lineCount = code.split('\n').length;
+  const charCount = code.length;
+  const isTooLarge = lineCount > 300 || charCount > 20000;
 
   // Calculate severity counts for the summary card
   const counts = {
@@ -204,10 +207,11 @@ export default function SessionPage() {
           {/* EDITOR CARD */}
           <div className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-              <select 
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                style={{ padding: '8px 12px', borderRadius: '12px', border: '1px solid var(--border-strong)', background: 'var(--bg)', fontWeight: 500, color: 'var(--ink)' }}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <select 
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  style={{ padding: '8px 12px', borderRadius: '12px', border: '1px solid var(--border-strong)', background: 'var(--bg)', fontWeight: 500, color: 'var(--ink)' }}
               >
                 <option value="python">Python</option>
                 <option value="django">Django</option>
@@ -225,8 +229,12 @@ export default function SessionPage() {
                 <option value="r">R</option>
                 <option value="sql">SQL</option>
               </select>
+              <span style={{ fontSize: '13px', color: isTooLarge ? 'var(--error)' : 'var(--muted)', fontWeight: isTooLarge ? 600 : 400 }}>
+                  {lineCount} / 300 lines
+                </span>
+              </div>
               
-                            {!urlToken && (
+              {!urlToken && (
                 <div style={{ display: 'flex', gap: '12px' }}>
                   
                   {/* REPLACE THE OLD BUTTON WITH THIS NEW ONE */}
@@ -253,7 +261,7 @@ export default function SessionPage() {
                     Try an example
                   </button>
 
-                  <button className="btn-primary" onClick={handleReview} disabled={status === 'running'}>
+                  <button className="btn-primary" onClick={handleReview} disabled={status === 'running' || isTooLarge}>
                     {status === 'running' ? 'Reviewing...' : 'Review code'}
                   </button>
                 </div>
@@ -268,6 +276,11 @@ export default function SessionPage() {
                 theme="dark" 
                 onCreateEditor={(view) => { editorViewRef.current = view; }} 
               />
+              {isTooLarge && (
+              <p style={{ color: 'var(--error)', fontSize: '13px', marginTop: '8px', fontWeight: 600 }}>
+                {lineCount > 300 ? 'Your code exceeds the 300-line limit.' : 'Your code exceeds the 20,000-character limit.'}
+              </p>
+            )}
             </div>
             <div style={{ marginTop: '12px', fontSize: '13px', color: 'var(--muted)' }}>
               Sessions are deleted after 7 days. Please don’t paste private code.
