@@ -66,7 +66,7 @@ export default function SessionPage() {
 
   // Connect to WebSocket if we have a share token in the URL
   useEffect(() => {
-    if (urlToken && urlToken !== token) {
+    if (urlToken && urlToken !== token  && visitorId) {
       setToken(urlToken);
       setStatus('running'); 
       
