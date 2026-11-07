@@ -172,7 +172,7 @@ export default function SessionPage() {
           <span style={{ fontSize: '22px', fontWeight: 700, color: 'var(--ink)' }}>Streamlint</span>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           {token && (
             <div style={{ background: 'var(--lilac-bg)', color: 'var(--lilac-ink)', padding: '8px 14px', borderRadius: '999px', fontSize: '14px', fontWeight: 600 }}>
               {viewers.length} viewing
@@ -214,8 +214,8 @@ export default function SessionPage() {
           
           {/* EDITOR CARD */}
           <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                 <select 
                   value={language}
                   onChange={(e) => setLanguage(e.target.value)}
@@ -237,13 +237,13 @@ export default function SessionPage() {
                 <option value="r">R</option>
                 <option value="sql">SQL</option>
               </select>
-              <span style={{ fontSize: '13px', color: isTooLarge ? 'var(--error)' : 'var(--muted)', fontWeight: isTooLarge ? 600 : 400 }}>
+              <span style={{ fontSize: '13px', color: isTooLarge ? 'var(--error)' : 'var(--muted)', fontWeight: isTooLarge ? 600 : 400, whiteSpace: 'nowrap' }}>
                   {lineCount} / 300 lines
                 </span>
               </div>
               
               {!urlToken && (
-                <div style={{ display: 'flex', gap: '12px' }}>
+               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', width: '100%', justifyContent: 'flex-end' }}>
                   
                   {/* REPLACE THE OLD BUTTON WITH THIS NEW ONE */}
                   <button 
@@ -263,7 +263,7 @@ export default function SessionPage() {
                       else if (language === 'r') setCode('x <- c(1, 2, 3)\ny <- mean(x)\nprint(y)');
                       else setCode('def divide(a, b):\n    return a / b\n\nprint(divide(10, 0))');
                     }}
-                    className="btn-secondary"
+                    className="btn-secondary" style={{ padding: '8px 12px', fontSize: '13px' }}
                     disabled={status === 'running'}
                   >
                     Try an example
