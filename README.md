@@ -3,7 +3,6 @@
   Streamlint
 </h1>
 
-**Paste code, watch the AI review stream in, share the link. Zero login, zero friction.**
 <p align="center">
   <a href="https://streamlint.vercel.app">
     <img src="https://img.shields.io/badge/Live_Demo-streamlint.vercel.app-D6336C?style=for-the-badge" alt="Live Demo">
