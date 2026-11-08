@@ -6,7 +6,7 @@ channels-redis==4.2.0
 daphne==4.1.2
 celery==5.4.0
 redis==5.0.8
-psycopg[binary]>=3.2.10
+psycopg[binary]>=3.3.8
 honcho==2.0.0
 python-dotenv==1.0.1
 dj-database-url==2.1.0
