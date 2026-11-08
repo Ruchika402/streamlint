@@ -1,0 +1,48 @@
+name: Smoke Test
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  
+  workflow_dispatch:      
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: pip install websockets httpx
+
+    - name: Test HTTP Health Endpoint
+      run: |
+        python -c "
+        import httpx
+        r = httpx.get('https://streamlint-backend.onrender.com/health/')
+        assert r.status_code == 200, f'Health check failed: {r.status_code}'
+        print('HTTP health check passed.')
+        "
+
+    - name: Test WebSocket Health Endpoint
+      run: |
+        python -c "
+        import asyncio
+        import websockets
+        import json
+
+        async def test():
+            uri = 'wss://streamlint-backend.onrender.com/ws/health/'
+            async with websockets.connect(uri, open_timeout=60) as ws:
+                await ws.send(json.dumps({'action': 'ping'}))
+                response = await asyncio.wait_for(ws.recv(), timeout=10)
+                data = json.loads(response)
+                assert data.get('type') == 'pong', f'Expected pong, got {data}'
+                print('WebSocket health check passed.')
+
+        asyncio.run(test())
+        "

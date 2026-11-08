@@ -148,3 +148,11 @@ class SessionConsumer(AsyncJsonWebsocketConsumer):
 
     async def session_event(self, event):
         await self.send_json(event["message"])
+
+class HealthConsumer(AsyncJsonWebsocketConsumer):
+    async def connect(self):
+        await self.accept()
+
+    async def receive_json(self, content, **kwargs):
+        if content.get("action") == "ping":
+            await self.send_json({"type": "pong"})
