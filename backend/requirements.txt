@@ -9,7 +9,7 @@ redis==5.0.8
 psycopg[binary]>=3.2.10
 honcho==2.0.0
 python-dotenv==1.0.1
-dj-database-url==2.1.0
+dj-database-url==3.1.2
 whitenoise==6.7.0
 
 # AI & Tools
@@ -19,7 +19,7 @@ ruff==0.4.4
 # Utilities
 django-cors-headers==4.3.1
 python-dotenv==1.0.1
-dj-database-url==2.1.0
+dj-database-url==3.1.2
 httpx>=0.28.1
 
 # Testing
