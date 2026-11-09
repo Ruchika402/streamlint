@@ -1,0 +1,86 @@
+[
+  {
+    "id": "py-1",
+    "language": "python",
+    "code": "import os\n\ndef divide(a, b):\n    return a / b\n\nprint(divide(10, 0))",
+    "real_issues": [
+      {"line": 1, "category": "style", "severity": "warning"},
+      {"line": 4, "category": "bug", "severity": "critical"}
+    ]
+  },
+  {
+    "id": "py-2",
+    "language": "python",
+    "code": "def get_user_data(user_id):\n    query = \"SELECT * FROM users WHERE id = \" + user_id\n    return query",
+    "real_issues": [
+      {"line": 2, "category": "security", "severity": "critical"}
+    ]
+  },
+  {
+    "id": "py-3",
+    "language": "python",
+    "code": "def calculate_total(prices):\n    total = 0\n    for i in range(len(prices)):\n        total = total + prices[i]\n    return total\n\nresult = calculate_total(None)",
+    "real_issues": [
+      {"line": 4, "category": "style", "severity": "warning"},
+      {"line": 7, "category": "bug", "severity": "critical"}
+    ]
+  },
+  {
+    "id": "py-4",
+    "language": "python",
+    "code": "def read_file(filename):\n    f = open(filename, 'r')\n    data = f.read()\n    return data",
+    "real_issues": [
+      {"line": 2, "category": "best-practice", "severity": "warning"}
+    ]
+  },
+  {
+    "id": "py-5",
+    "language": "python",
+    "code": "users = [{'name': 'Alice'}, {'name': 'Bob'}]\nfor user in users:\n    print(user['age'])",
+    "real_issues": [
+      {"line": 3, "category": "bug", "severity": "critical"}
+    ]
+  },
+  {
+    "id": "dj-1",
+    "language": "django",
+    "code": "from django.http import JsonResponse\nfrom django.views.decorators.csrf import csrf_exempt\n\n@csrf_exempt\ndef update_user(request):\n    if request.method == 'POST':\n        user = User.objects.get(id=request.POST['id'])\n        user.is_admin = True\n        user.save()\n        return JsonResponse({'status': 'ok'})",
+    "real_issues": [
+      {"line": 4, "category": "security", "severity": "critical"},
+      {"line": 7, "category": "security", "severity": "critical"}
+    ]
+  },
+  {
+    "id": "dj-2",
+    "language": "django",
+    "code": "from django.shortcuts import render\nfrom .models import Post\n\ndef search_posts(request):\n    query = request.GET.get('q')\n    results = Post.objects.filter(title__icontains=query)\n    return render(request, 'results.html', {'results': results})",
+    "real_issues": [
+      {"line": 6, "category": "performance", "severity": "warning"}
+    ]
+  },
+  {
+    "id": "dj-3",
+    "language": "django",
+    "code": "from django.core.mail import send_mail\n\ndef notify(user):\n    send_mail('Hello', 'Body', 'from@example.com', [user.email])",
+    "real_issues": [
+      {"line": 4, "category": "best-practice", "severity": "warning"}
+    ]
+  },
+  {
+    "id": "js-1",
+    "language": "javascript",
+    "code": "function getUserData(userId) {\n  let query = \"SELECT * FROM users WHERE id = \" + userId;\n  return eval(query);\n}",
+    "real_issues": [
+      {"line": 2, "category": "security", "severity": "critical"},
+      {"line": 3, "category": "security", "severity": "critical"}
+    ]
+  },
+  {
+    "id": "js-2",
+    "language": "javascript",
+    "code": "function divide(a, b) {\n  return a / b;\n}\nconsole.log(divide(10, 0));",
+    "real_issues": [
+      {"line": 2, "category": "bug", "severity": "critical"}
+    ]
+  }
+]
