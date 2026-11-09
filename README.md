@@ -76,6 +76,16 @@ docker compose up --build
 - [Runbook](docs/RUNBOOK.md)
 - [Threat Model](docs/THREAT_MODEL.md)
 
+## ⚡ Performance
+
+Streamlint is built for real-time scale. We tested the WebSocket broadcast layer with **50 concurrent viewers** on a single session:
+
+- **Time to first issue:** ~3.1 seconds 
+- **Dropped connections:** 0
+- **Synchronization:** Perfect broadcast (all 50 viewers received the issue at the exact same millisecond).
+
+**[Read the full load test report](docs/LOAD_TEST.md)**
+
 ## ⚠️ Limitations
 
 - **Free Tier:** The backend runs on Render's free tier, which spins down after 15 minutes of inactivity. The first request after a break may take approximately 50 seconds to wake up.
