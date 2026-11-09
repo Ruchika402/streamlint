@@ -70,7 +70,7 @@ class SessionConsumer(AsyncJsonWebsocketConsumer):
             r = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True)
             presence_key = f"presence:{self.token}"
             
-            await r.srem(presence_key, self.visitor_id)
+            await r.hdel(presence_key, self.visitor_id)
             
             # Get updated viewers
             all_viewers = await r.hgetall(presence_key)
@@ -101,6 +101,11 @@ class SessionConsumer(AsyncJsonWebsocketConsumer):
             return True
         except ReviewSession.DoesNotExist:
             return False
+
+    @database_sync_to_async
+    def check_review_belongs_to_session(self, review_id):
+        from reviews.models import Review
+        return Review.objects.filter(id=review_id, session__token=self.token).exists()
         
     @database_sync_to_async
     def get_latest_review_id(self):
@@ -138,10 +143,12 @@ class SessionConsumer(AsyncJsonWebsocketConsumer):
             print(f"🚨 RECEIVED RUN COMMAND FOR REVIEW: {review_id}", flush=True)
             
             if review_id:
-                await self.send_json({
-                    "type": "status",
-                    "payload": {"state": "running"}
-                })
+                if not await self.check_review_belongs_to_session(review_id):
+                    await self.send_json({"type": "error", "payload": {"message": "Invalid review ID."}})
+                    return
+
+                await self.send_json({"type": "status", "payload": {"state": "running"}})
+                
                 from reviews.services.pipeline import run_review
                 # Keep a reference so the task isn't garbage-collected
                 self._task = asyncio.create_task(run_review(review_id, self.token))
