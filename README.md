@@ -78,7 +78,7 @@ docker compose up --build
 
 ## ⚡ Performance
 
-Streamlint is built for real-time scale. We tested the WebSocket broadcast layer with **50 concurrent viewers** on a single session:
+Streamlint is built for real-time scale. Tested the WebSocket broadcast layer with **50 concurrent viewers** on a single session:
 
 - **Time to first issue:** ~3.1 seconds 
 - **Dropped connections:** 0
