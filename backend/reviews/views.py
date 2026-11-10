@@ -1,4 +1,6 @@
 import os
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 from django.conf import settings
 from django.http import HttpResponse
@@ -11,7 +13,7 @@ from rest_framework.views import APIView
 from .services.limits import check_rate_limit, get_client_ip
 from .services.captcha import verify_turnstile
 
-from .models import ReviewSession
+from .models import ReviewSession, Review
 from .serializers import ReviewSerializer, ReviewSessionSerializer
 
 
@@ -98,3 +100,33 @@ def ws_test_page(request):
 
 
 
+@csrf_exempt
+def internal_stats(request):
+    # 1. Check Secret Header
+    secret = os.getenv("INTERNAL_STATS_SECRET", "super-secret-stats-key")
+    if request.headers.get("X-Internal-Secret") != secret:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    # 2. Query Database for Counts
+    total_reviews = Review.objects.count()
+    finished_reviews = Review.objects.filter(status="done").count()
+    failed_reviews = Review.objects.filter(status="failed").count()
+
+    # 3. Query Redis for Gemini budget used
+    import redis
+    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    r = redis.from_url(redis_url, decode_responses=True)
+    
+    from datetime import datetime, UTC
+    today = datetime.now(UTC).strftime("%Y-%m-%d")
+    budget_key = f"gemini:calls:{today}"
+    budget_used = int(r.get(budget_key) or 0)
+
+    return JsonResponse({
+        "reviews": {
+            "total": total_reviews,
+            "finished": finished_reviews,
+            "failed": failed_reviews,
+        },
+        "gemini_budget_used_today": budget_used,
+    })
