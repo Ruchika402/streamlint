@@ -1,10 +1,12 @@
 from django.contrib import admin
 from django.urls import path
+
 from reviews.views import (
     HealthCheckView,
     ReviewCreateView,
     SessionCreateView,
     SessionDetailView,
+    internal_stats,
     ws_test_page,
 )
 
@@ -15,4 +17,5 @@ urlpatterns = [
     path("api/sessions/<str:token>/", SessionDetailView.as_view(), name="session-detail"),
     path("api/sessions/<str:token>/reviews/", ReviewCreateView.as_view(), name="review-create"),
     path("ws_test.html", ws_test_page, name="ws_test"),
+    path("internal/stats/", internal_stats, name="internal-stats"),
 ]
