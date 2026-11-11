@@ -1,0 +1,72 @@
+name: Scheduled Integration Test
+
+on:
+  schedule:
+    - cron: '0 0 */3 * *'  
+  workflow_dispatch:       
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: pip install httpx websockets
+
+    - name: Test Live API
+      run: |
+        python -c "
+        import httpx
+        import asyncio
+        import websockets
+        import json
+
+        async def test():
+            async with httpx.AsyncClient() as client:
+                # 1. Create a session
+                res = await client.post(
+                    'https://streamlint-backend.onrender.com/api/sessions/',
+                    json={'language': 'python'},
+                    headers={'X-Visitor-Id': 'scheduled-test-user'}
+                )
+                assert res.status_code == 201, f'Create session failed: {res.status_code} - {res.text}'
+                token = res.json()['token']
+                print('✅ Session created')
+
+                # 2. Create a review
+                rev_res = await client.post(
+                    f'https://streamlint-backend.onrender.com/api/sessions/{token}/reviews/',
+                    json={'code': 'import os\nprint(1)', 'language': 'python', 'turnstile_token': 'dummy'},
+                    headers={'X-Visitor-Id': 'scheduled-test-user'}
+                )
+                assert rev_res.status_code == 201, f'Create review failed: {rev_res.status_code} - {rev_res.text}'
+                review_id = rev_res.json()['id']
+                print('✅ Review created')
+
+            # 3. Connect to WebSocket and check the AI pipeline
+            uri = f'wss://streamlint-backend.onrender.com/ws/sessions/{token}/?visitor_id=scheduled-test-user'
+            async with websockets.connect(uri) as ws:
+                await ws.send(json.dumps({'action': 'run', 'review_id': review_id}))
+                print('✅ WebSocket connected')
+
+                got_issue = False
+                async for msg in ws:
+                    data = json.loads(msg)
+                    if data['type'] == 'static_findings':
+                        print('✅ Static findings received')
+                    if data['type'] == 'issue':
+                        got_issue = True
+                        print('✅ AI issue received')
+                    if data['type'] == 'status' and data['payload']['state'] == 'done':
+                        break
+                
+                assert got_issue, '❌ AI did not return any issues (AI is likely down)'
+
+        asyncio.run(test())
+        "
