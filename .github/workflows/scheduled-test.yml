@@ -70,3 +70,13 @@ jobs:
 
         asyncio.run(test())
         "
+
+    - name: Test Live Frontend
+      run: |
+        python -c "
+        import httpx
+        r = httpx.get('https://streamlint.vercel.app/')
+        assert r.status_code == 200, f'Frontend failed: {r.status_code}'
+        assert '<div id=\"root\">' in r.text, 'React root not found'
+        print('✅ Frontend is live and serving React')
+        "
