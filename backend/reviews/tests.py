@@ -7,6 +7,7 @@ import os
 import redis
 from reviews.models import ReviewSession
 
+
 @pytest.fixture
 def api_client():
     return APIClient()

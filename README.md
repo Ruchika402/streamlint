@@ -70,6 +70,21 @@ cd streamlint
 docker compose up --build
 ```
 
+## 🛠️ Development
+
+We use a `Makefile` to make local development easy:
+
+```bash
+# Run backend tests (Ruff + Pytest) and build the frontend
+make test
+
+# Start the backend and frontend in parallel
+make dev
+
+# Start the full stack with Docker
+make up
+```
+
 ## 📚 Documentation
 
 - [Chaos Testing Report](docs/CHAOS.md)

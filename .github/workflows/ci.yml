@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
-    # Throwaway values used only inside CI. Never reuse them anywhere real.
+    
     env:
       SECRET_KEY: ci-only-not-a-real-secret
       DEBUG: 'False'
@@ -87,8 +87,6 @@ jobs:
 
       - name: Run tests
         working-directory: backend
-        # Exit code 5 means "no tests collected". It is tolerated until you write
-        # your first test. After that, delete the "|| [ $? -eq 5 ]" part.
         run: pytest || [ $? -eq 5 ]
 
   frontend:

@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def run_ruff(code: str, language: str) -> list:
+def run_ruff(code: str, language: str) -> list[dict]:
     if language not in ["python", "django"]:
         return []
 
