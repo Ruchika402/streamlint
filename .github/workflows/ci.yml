@@ -142,3 +142,14 @@ jobs:
       - name: Note when there is no Dockerfile yet
         if: ${{ hashFiles('backend/Dockerfile') == '' }}
         run: echo "No backend/Dockerfile yet, skipping the Docker build."
+
+  health-check:
+    needs: [backend, frontend, docker] # Only run if the other jobs pass
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check Live Backend Health
+      run: |
+        echo "Waiting for Render to wake up..."
+        sleep 60
+        curl -f https://streamlint-backend.onrender.com/health/ || exit 1
+        echo "✅ Live backend is healthy!"
