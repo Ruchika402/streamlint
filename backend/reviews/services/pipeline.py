@@ -43,6 +43,10 @@ async def run_review(review_id: int, token: str):
         running_event["payload"]["language"] = review.language
         await broadcast(group_name, running_event)
         seq += 1
+        from reviews.services.budget import check_and_increment_budget
+        budget_ok = await check_and_increment_budget()
+        if not budget_ok:
+            raise Exception("Daily AI capacity reached. Please try again tomorrow.")
 
         # 3. Run Ruff
         code = review.code
@@ -157,6 +161,14 @@ async def run_review(review_id: int, token: str):
     except Exception as e:
         logger.exception(f"Pipeline error: {e}")
         try:
+            if 'ruff_findings' in locals() and ruff_findings:
+                error_event = {
+                    "type": "error",
+                    "review_id": review_id,
+                    "seq": 95,
+                    "payload": {"message": "AI review unavailable. Showing static findings only."}
+                }
+                await broadcast(group_name, error_event)
             review = await Review.objects.aget(id=review_id)
             review.status = "failed"
             review.error = str(e)

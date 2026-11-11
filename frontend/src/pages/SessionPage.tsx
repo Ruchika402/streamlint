@@ -31,7 +31,8 @@ export default function SessionPage() {
   const [token, setToken] = useState<string | null>(null);
   const [viewers, setViewers] = useState<any[]>([]);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  
+  const [aiError, setAiError] = useState<string | null>(null);
+
   const editorViewRef = useRef<EditorView | null>(null);
   const visitorId = useVisitorId();
   const lineCount = code.split('\n').length;
@@ -81,6 +82,8 @@ export default function SessionPage() {
           if (data.payload.language) setLanguage(data.payload.language);
         }
         if (data.type === 'presence') setViewers(data.payload.viewers);
+        if (data.type === 'error') {
+          setAiError(data.payload.message);}
       };
       
       return () => ws.close();
@@ -371,6 +374,10 @@ export default function SessionPage() {
         {/* RIGHT COLUMN */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: 700 }}>✨ Live review</h2>
+          {aiError && (
+            <div style={{ background: 'var(--amber-bg)', color: 'var(--amber-ink)', padding: '12px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: 600, marginBottom: '14px' }}>⚠️ {aiError}
+            </div>
+          )}
           
           {/* LOADING CARD */}
           {status === 'running' && (
