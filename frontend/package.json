@@ -26,6 +26,7 @@
     "@fontsource/plus-jakarta-sans": "^5.3.0",
     "@replit/codemirror-lang-csharp": "^6.2.0",
     "@uiw/react-codemirror": "^4.25.12",
+    "@vercel/analytics": "^2.0.1",
     "codemirror-lang-ruby": "^0.4.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

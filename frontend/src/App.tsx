@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import SessionPage from './pages/SessionPage';
 import SeoPage from './pages/SeoPage';
+import { Analytics } from '@vercel/analytics/react';
 
 function App() {
   return (
@@ -55,6 +56,7 @@ function App() {
           <SeoPage language="SQL" title="Free AI SQL Code Review" description="Find SQL injection risks, missing indexes, and inefficient queries." sampleCode={'SELECT * FROM users WHERE id = " + user_input + "; -- Bug: SQL Injection'} />
         } />
       </Routes>
+      <Analytics />
     </BrowserRouter>
   );
 }
