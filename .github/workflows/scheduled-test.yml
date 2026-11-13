@@ -42,7 +42,7 @@ jobs:
                 # 2. Create a review
                 rev_res = await client.post(
                     f'https://streamlint-backend.onrender.com/api/sessions/{token}/reviews/',
-                    json={'code': 'import os\nprint(1)', 'language': 'python', 'turnstile_token': 'dummy'},
+                    json={'code': 'import os\nprint(1)', 'language': 'python', 'turnstile_token': '1x0000000000000000000000000000000AA'}, 
                     headers={'X-Visitor-Id': 'scheduled-test-user'}
                 )
                 assert rev_res.status_code == 201, f'Create review failed: {rev_res.status_code} - {rev_res.text}'
