@@ -39,10 +39,10 @@ jobs:
                 token = res.json()['token']
                 print('✅ Session created')
 
-                # 2. Create a review
+                # 2. Create a review (using the Cloudflare test token)
                 rev_res = await client.post(
                     f'https://streamlint-backend.onrender.com/api/sessions/{token}/reviews/',
-                    json={'code': 'import os\nprint(1)', 'language': 'python', 'turnstile_token': '1x0000000000000000000000000000000AA'}, 
+                    json={'code': 'import os\nprint(1)', 'language': 'python', 'turnstile_token': '1x0000000000000000000000000000000AA'},
                     headers={'X-Visitor-Id': 'scheduled-test-user'}
                 )
                 assert rev_res.status_code == 201, f'Create review failed: {rev_res.status_code} - {rev_res.text}'
@@ -51,20 +51,22 @@ jobs:
 
             # 3. Connect to WebSocket and check the AI pipeline
             uri = f'wss://streamlint-backend.onrender.com/ws/sessions/{token}/?visitor_id=scheduled-test-user'
-            async with websockets.connect(uri) as ws:
+            async with websockets.connect(uri, open_timeout=60) as ws:
                 await ws.send(json.dumps({'action': 'run', 'review_id': review_id}))
                 print('✅ WebSocket connected')
 
                 got_issue = False
-                async for msg in ws:
-                    data = json.loads(msg)
-                    if data['type'] == 'static_findings':
-                        print('✅ Static findings received')
-                    if data['type'] == 'issue':
-                        got_issue = True
-                        print('✅ AI issue received')
-                    if data['type'] == 'status' and data['payload']['state'] == 'done':
-                        break
+                for _ in range(50):  # Try for up to 50 messages
+                    try:
+                        msg = await asyncio.wait_for(ws.recv(), timeout=5)
+                        data = json.loads(msg)
+                        if data['type'] == 'issue':
+                            got_issue = True
+                            print('✅ AI issue received')
+                        if data['type'] == 'status' and data['payload']['state'] == 'done':
+                            break
+                    except asyncio.TimeoutError:
+                        pass
                 
                 assert got_issue, '❌ AI did not return any issues (AI is likely down)'
 
