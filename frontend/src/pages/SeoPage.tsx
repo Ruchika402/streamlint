@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 
 interface SeoPageProps {
   language: string;
@@ -10,6 +11,17 @@ interface SeoPageProps {
 export default function SeoPage({ language, title, description, sampleCode }: SeoPageProps) {
   return (
     <div style={{ padding: '40px 20px', maxWidth: '800px', margin: '0 auto', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+      
+      
+      <Helmet>
+        <title>{title} | Streamlint</title>
+        <meta name="description" content={description} />
+        <meta
+          name="keywords"
+          content={`${language} code review, AI code review, correct ${language} code, fix ${language} bugs, code review tool`}
+        />
+      </Helmet>
+
       <Link to="/" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>← Back to Streamlint</Link>
       
       <h1 style={{ fontSize: '36px', fontWeight: 800, color: 'var(--ink)', marginTop: '24px', letterSpacing: '-0.5px' }}>

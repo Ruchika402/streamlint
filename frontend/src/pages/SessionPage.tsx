@@ -21,6 +21,8 @@ import { EditorView } from '@codemirror/view';
 import TurnstileBox from '../components/TurnstileBox';
 import Sparkles from '../components/Sparkles';
 import { useParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
+
 
 export default function SessionPage() {
   const { token: urlToken } = useParams(); 
@@ -166,6 +168,12 @@ export default function SessionPage() {
 
   return (
     <div className="app-container">
+      <Helmet>
+        <title>Streamlint - Real-Time AI Code Reviewer</title>
+        <meta name="description" content="Paste code and watch the AI review stream in live. The fastest AI code review tool for Python, Java, C++, and 12 other languages." />
+        <meta name="keywords" content="AI code review, code review tool, correct code, fix bugs, static analysis, real-time code reviewer" />
+      </Helmet>
+      
       <Sparkles />
       <header className="header-bar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
