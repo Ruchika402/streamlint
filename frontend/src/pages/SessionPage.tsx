@@ -34,6 +34,7 @@ export default function SessionPage() {
   const [viewers, setViewers] = useState<any[]>([]);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [isWakingUp, setIsWakingUp] = useState(false);
 
   const editorViewRef = useRef<EditorView | null>(null);
   const visitorId = useVisitorId();
@@ -103,8 +104,10 @@ export default function SessionPage() {
     setIssues([]);
     setToken(null);
 
+    const wakeUpTimer = setTimeout(() => setIsWakingUp(true), 3000);
+
     try {
-      // 1. Create Session
+      //  Create Session
       const res = await fetch('https://streamlint-backend.onrender.com/api/sessions/', {
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
@@ -132,6 +135,8 @@ export default function SessionPage() {
       const ws = new WebSocket(`wss://streamlint-backend.onrender.com/ws/sessions/${session.token}/?visitor_id=${visitorId}`);
       
       ws.onopen = () => {
+        clearTimeout(wakeUpTimer);
+        setIsWakingUp(false);
         setTimeout(() => ws.send(JSON.stringify({ action: 'run', review_id: review.id })), 500);
       };
       
@@ -386,7 +391,11 @@ export default function SessionPage() {
             <div style={{ background: 'var(--amber-bg)', color: 'var(--amber-ink)', padding: '12px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: 600, marginBottom: '14px' }}>⚠️ {aiError}
             </div>
           )}
-          
+          {isWakingUp && status === 'running' && (
+            <div style={{ background: 'var(--amber-bg)', color: 'var(--amber-ink)', padding: '12px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: 600, marginBottom: '14px' }}>
+              ⏳ Waking up the server. This can take about a minute on the free plan.
+            </div>
+          )}
           {/* LOADING CARD */}
           {status === 'running' && (
             <div className="card result-card" style={{ animation: 'fadeIn 0.2s ease-out', borderStyle: 'dashed', borderWidth: '1.5px', borderColor: 'var(--border-strong)' }}>

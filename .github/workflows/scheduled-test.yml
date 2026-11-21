@@ -39,7 +39,7 @@ jobs:
                 token = res.json()['token']
                 print('✅ Session created')
 
-                # 2. Create a review (using the Cloudflare test token)
+                # 2. Create a review (Turnstile is bypassed because we use a test user)
                 rev_res = await client.post(
                     f'https://streamlint-backend.onrender.com/api/sessions/{token}/reviews/',
                     json={'code': 'import os\nprint(1)', 'language': 'python', 'turnstile_token': '1x0000000000000000000000000000000AA'},
@@ -56,7 +56,7 @@ jobs:
                 print('✅ WebSocket connected')
 
                 got_issue = False
-                for _ in range(50):  # Try for up to 50 messages
+                for _ in range(50):
                     try:
                         msg = await asyncio.wait_for(ws.recv(), timeout=5)
                         data = json.loads(msg)
