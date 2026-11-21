@@ -2,7 +2,7 @@ name: Weekly Security Audit
 
 on:
   schedule:
-    - cron: '0 0 * * 0'
+    - cron: '0 0 * * 0' 
   workflow_dispatch:
 
 jobs:
@@ -16,10 +16,8 @@ jobs:
       with:
         python-version: '3.12'
 
-    - name: Install dependencies
-      run: |
-        pip install safety
-        pip install -r backend/requirements.txt
+    - name: Install pip-audit
+      run: pip install pip-audit
 
-    - name: Run Safety Audit
-      run: safety check
+    - name: Run Security Audit
+      run: pip-audit -r backend/requirements.txt
