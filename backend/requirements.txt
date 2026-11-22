@@ -17,7 +17,7 @@ google-genai>=1.0.0
 ruff==0.4.4
 
 # Utilities
-django-cors-headers==4.3.1
+django-cors-headers==4.9.0
 python-dotenv==1.2.4
 dj-database-url==3.1.2
 httpx>=0.28.1
